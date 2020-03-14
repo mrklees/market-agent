@@ -8,7 +8,6 @@ from multiprocessing import Pool, freeze_support
 from tqdm import tqdm
 from MarketAgent.Market import Market, StockData
 from MarketAgent.Trader import ValueTrader
-import tensorflow_addons as tfa
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
@@ -120,7 +119,7 @@ def process_episode(
 
 if __name__ == "__main__":
     freeze_support()
-    pool = Pool(6)
+    pool = Pool(8)
     for epoch in tqdm(range(n_epochs)):
         #print(f"Starting Epock {epoch}")
         episodes = [

@@ -5,6 +5,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
+import tensorflow_addons as tfa
 
 
 class Trader(object):
@@ -70,20 +71,37 @@ class ValueTrader(Trader):
     def value(self, proposal, state):
         inp = np.concatenate(
             [state, [proposal]]
-        ).reshape(1, self.window_size + 3)
+        ).reshape(1, -1)
         inp = tf.convert_to_tensor(inp, dtype=tf.float32)
         return self.model.predict(inp)
 
     def build_value_network(self, window_size):
+        # For input we're expecting:
+        #   - t_0, ..., t_window_wize
+        #   - current assets value
+        #   - a proposed decision
         inputs = keras.Input(shape=(window_size + 3,), name='state')
-        x = layers.Dense(64, activation='relu', name='dense_1')(inputs)
-        x = layers.Dense(64, activation='relu', name='dense_2')(x)
+        x = layers.LayerNormalization(axis=1, center=True, scale=True)(inputs)
+        x = layers.Dense(64, activation='relu', name='dense_1')(x)
+        x = layers.Dropout(0.1)(x)
+        x = layers.Dense(32, activation='relu', name='dense_2')(x)
+        x = layers.Dropout(0.1)(x)
+        x = layers.Dense(16, activation='relu', name='dense_3')(x)
+        x = layers.Dropout(0.1)(x)
+        x = layers.Dense(8, activation='relu', name='dense_4')(x)
         outputs = layers.Dense(1, name='predictions')(x)
         self.model = keras.Model(inputs=inputs, outputs=outputs)
 
         self.model.compile(
             # Optimizer
-            optimizer=keras.optimizers.RMSprop(learning_rate=1e-3),
+            optimizer=tf.keras.optimizers.Adam(
+                learning_rate=0.001,
+                beta_1=0.9,
+                beta_2=0.999,
+                epsilon=1e-07,
+                amsgrad=False,
+                name='Adam'
+            ),
             # Loss function to minimize
             loss='mse',
             # List of metrics to monitor
@@ -101,9 +119,9 @@ class ValueTrader(Trader):
             dtype=tf.float32
         )
         self.model.fit(
-            X, y, batch_size=256, epochs=25
+            X, y, batch_size=256, epochs=100
         )
-        np.save(f".data/{self.name}_memory.npy", memories)
+        np.save(f".data/{self.name}_{self.window_size}_memory.npy", memories)
         tf.keras.models.save_model(
             self.model,
             f"value_{window_size}_model.tf",
