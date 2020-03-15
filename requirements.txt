@@ -1,3 +1,5 @@
 numpy
 pandas
 nose
+alpha_vantage
+pika

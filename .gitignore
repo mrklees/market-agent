@@ -2,3 +2,4 @@ __pycache__
 .secrets
 .data
 *.tf/
+.docker

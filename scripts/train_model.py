@@ -22,7 +22,7 @@ if gpus:
         # Memory growth must be set before GPUs have been initialized
         print(e)
 
-n_epochs = 25
+n_epochs = 100
 n_episodes = 100
 episode_size = 100
 starting_assets = 10000
